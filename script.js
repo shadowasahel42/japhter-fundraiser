@@ -2,9 +2,9 @@
   'use strict';
 
   if (window.pdfjsLib) {
-  window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-}
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
 
   /* ---------------------------------------------------------
      STATE
@@ -28,7 +28,6 @@
   const customTitleField = $('customTitleField');
   const customTitleInput = $('customTitleInput');
   const nameInput = $('nameInput');
-
 
   const manualTitle = $('manualTitle');
   const manualName = $('manualName');
@@ -71,35 +70,34 @@
   }
 
   function slugify(text) {
-    return (text || 'invitation')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '') || 'invitation';
+    return (
+      (text || 'invitation')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '') || 'invitation'
+    );
   }
 
   /* ---------------------------------------------------------
      LIVE PREVIEW UPDATE
   --------------------------------------------------------- */
   function updatePreview() {
-  const label = displayName(
-    state.title,
-    state.customTitle,
-    state.name
-  );
+    const label = displayName(state.title, state.customTitle, state.name);
+    posterInviteeName.textContent = label;
 
-  posterInviteeName.textContent = label;
+    // Japhter's fixed image
+    if (posterPhoto) {
+      posterPhoto.style.opacity = '1';
+      posterPhoto.style.objectPosition = `${state.photo.x}% ${state.photo.y}%`;
+      posterPhoto.style.transform = `scale(${state.photo.scale / 100})`;
+    }
 
-  // Japhter's fixed image
-  posterPhoto.style.opacity = '1';
-  posterPhoto.style.objectPosition =
-    `${state.photo.x}% ${state.photo.y}%`;
-  posterPhoto.style.transform =
-    `scale(${state.photo.scale / 100})`;
-
-  // Fixed M-PESA icon
-  posterMpesa.style.width = '120px';
-  posterMpesa.style.height = '120px';
-}
+    // Fixed M-PESA icon
+    if (posterMpesa) {
+      posterMpesa.style.width = '120px';
+      posterMpesa.style.height = '120px';
+    }
+  }
 
   /* ---------------------------------------------------------
      INVITEE CONTROLS
@@ -109,26 +107,31 @@
     customTitleField.hidden = titleSelect.value !== '__custom';
     updatePreview();
   });
+
   customTitleInput.addEventListener('input', () => {
     state.customTitle = customTitleInput.value;
     updatePreview();
   });
+
   nameInput.addEventListener('input', () => {
     state.name = nameInput.value;
     updatePreview();
   });
-
 
   /* ---------------------------------------------------------
      PARTICIPANT LIST — manual add
   --------------------------------------------------------- */
   manualAddBtn.addEventListener('click', () => {
     const name = manualName.value.trim();
-    if (!name) { manualName.focus(); return; }
+    if (!name) {
+      manualName.focus();
+      return;
+    }
     addParticipant({ title: manualTitle.value, customTitle: '', name });
     manualName.value = '';
     manualName.focus();
   });
+
   manualName.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') manualAddBtn.click();
   });
@@ -148,7 +151,20 @@
     participantBody.innerHTML = '';
     emptyListHint.style.display = state.participants.length ? 'none' : 'block';
 
-    const titleOptions = ['', 'Mr & Mrs', 'Mr', 'Mrs', 'Miss', 'Ms', 'Rev', 'Dr', 'Pst', 'Prof', 'HoN', 'HE'];
+    const titleOptions = [
+      '',
+      'Mr & Mrs',
+      'Mr',
+      'Mrs',
+      'Miss',
+      'Ms',
+      'Rev',
+      'Dr',
+      'Pst',
+      'Prof',
+      'HoN',
+      'HE'
+    ];
 
     state.participants.forEach((p) => {
       const tr = document.createElement('tr');
@@ -157,7 +173,9 @@
       const cb = document.createElement('input');
       cb.type = 'checkbox';
       cb.checked = p.selected;
-      cb.addEventListener('change', () => { p.selected = cb.checked; });
+      cb.addEventListener('change', () => {
+        p.selected = cb.checked;
+      });
       tdSel.appendChild(cb);
 
       const tdTitle = document.createElement('td');
@@ -169,14 +187,18 @@
         if (t === p.title) opt.selected = true;
         sel.appendChild(opt);
       });
-      sel.addEventListener('change', () => { p.title = sel.value; });
+      sel.addEventListener('change', () => {
+        p.title = sel.value;
+      });
       tdTitle.appendChild(sel);
 
       const tdName = document.createElement('td');
       const nameField = document.createElement('input');
       nameField.type = 'text';
       nameField.value = p.name;
-      nameField.addEventListener('input', () => { p.name = nameField.value; });
+      nameField.addEventListener('input', () => {
+        p.name = nameField.value;
+      });
       tdName.appendChild(nameField);
 
       const tdActions = document.createElement('td');
@@ -185,6 +207,7 @@
       previewBtn.className = 'row-preview';
       previewBtn.textContent = 'Preview';
       previewBtn.addEventListener('click', () => applyParticipantToPreview(p));
+
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
       removeBtn.className = 'row-remove';
@@ -194,6 +217,7 @@
         state.participants = state.participants.filter((x) => x.id !== p.id);
         renderParticipants();
       });
+
       tdActions.appendChild(previewBtn);
       tdActions.appendChild(removeBtn);
 
@@ -213,6 +237,7 @@
     nameInput.value = p.name;
     updatePreview();
   }
+
   function titleOptionExists(t) {
     return Array.from(titleSelect.options).some((o) => o.value === t);
   }
@@ -234,11 +259,15 @@
     for (const file of files) {
       try {
         const names = await extractNamesFromFile(file);
-        names.forEach((n) => addParticipant({ title: '', customTitle: '', name: n }));
+        names.forEach((n) =>
+          addParticipant({ title: '', customTitle: '', name: n })
+        );
         totalAdded += names.length;
       } catch (err) {
         console.error(err);
-        importStatus.textContent = `Could not read "${file.name}": ${err.message || err}`;
+        importStatus.textContent = `Could not read "${file.name}": ${
+          err.message || err
+        }`;
       }
     }
     importStatus.textContent = `Imported ${totalAdded} name(s) from ${files.length} file(s). Review and assign titles below.`;
@@ -250,7 +279,10 @@
 
     if (ext === 'pdf') return extractFromPDF(file);
     if (ext === 'docx') return extractFromDocx(file);
-    if (ext === 'doc') throw new Error('legacy .doc is not supported in-browser — please save as .docx');
+    if (ext === 'doc')
+      throw new Error(
+        'legacy .doc is not supported in-browser — please save as .docx'
+      );
     if (ext === 'xls' || ext === 'xlsx') return extractFromSheet(file);
     throw new Error('unsupported file type');
   }
@@ -281,13 +313,15 @@
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
     const values = [];
     rows.forEach((row) => {
-      if (row && row[0] !== undefined && row[0] !== null) values.push(String(row[0]));
+      if (row && row[0] !== undefined && row[0] !== null)
+        values.push(String(row[0]));
     });
     return cleanLines(values);
   }
 
   function cleanLines(lines) {
-    const skipWords = /^(name|names|participant|participants|invitee|invitees|title|no\.?|#)$/i;
+    const skipWords =
+      /^(name|names|participant|participants|invitee|invitees|title|no\.?|#)$/i;
     return lines
       .map((l) => l.replace(/\s+/g, ' ').trim())
       .filter((l) => l.length > 1 && l.length < 60)
@@ -296,273 +330,172 @@
   }
 
   /* ---------------------------------------------------------
-   GENERATION (html2canvas → JPG)
-   Export is always rendered at a fixed 960 × 540 size,
-   regardless of the phone/PC screen size.
---------------------------------------------------------- */
+     GENERATION (html2canvas → JPG)
+     Export is always rendered at a fixed 960 × 540 size,
+     regardless of the phone/PC screen size.
+  --------------------------------------------------------- */
+  const EXPORT_WIDTH = 960;
+  const EXPORT_HEIGHT = 540;
+  const RENDER_SCALE = 2.5;
 
-const EXPORT_WIDTH = 960;
-const EXPORT_HEIGHT = 540;
-const RENDER_SCALE = 2.5;
-
-async function renderPosterBlob() {
-  const images = Array.from(poster.querySelectorAll('img'));
-
-  await Promise.all(
-    images.map((img) => {
-      if (img.complete && img.naturalWidth > 0) {
-        return Promise.resolve();
-      }
-
-      return new Promise((resolve, reject) => {
-        img.addEventListener('load', resolve, { once: true });
-        img.addEventListener(
-          'error',
-          () => reject(new Error(`Could not load image: ${img.src}`)),
-          { once: true }
-        );
-      });
-    })
-  );
-
-  await new Promise((resolve) =>
-    requestAnimationFrame(() =>
-      requestAnimationFrame(resolve)
-    )
-  );
-
-  const canvas = await html2canvas(poster, {
-    scale: RENDER_SCALE,
-    useCORS: true,
-    allowTaint: false,
-    backgroundColor: '#FFFFFF',
-    logging: false
-  });
-
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) {
-          reject(new Error('Canvas could not be converted to a JPG.'));
-          return;
-        }
-
-        resolve(blob);
-      },
-      'image/jpeg',
-      0.95
-    );
-  });
-}
-
-  /*
-   * Clone the actual poster.
-   */
-  const exportPoster = poster.cloneNode(true);
-
-  exportPoster.removeAttribute('id');
-
-  /*
-   * Force the export poster to exactly 960 × 540.
-   */
-  exportPoster.style.width = `${EXPORT_WIDTH}px`;
-  exportPoster.style.height = `${EXPORT_HEIGHT}px`;
-  exportPoster.style.maxWidth = 'none';
-  exportPoster.style.minWidth = `${EXPORT_WIDTH}px`;
-  exportPoster.style.aspectRatio = 'auto';
-  exportPoster.style.margin = '0';
-  exportPoster.style.padding = '0';
-
-  /*
-   * Make sure the two main columns retain their intended
-   * 40/60 proportions during export.
-   */
-  const photoCol = exportPoster.querySelector('.poster__photo-col');
-  const contentCol = exportPoster.querySelector('.poster__content-col');
-
-  if (photoCol) {
-    photoCol.style.width = '40%';
-    photoCol.style.height = '100%';
-    photoCol.style.flexShrink = '0';
-  }
-
-  if (contentCol) {
-    contentCol.style.width = '60%';
-    contentCol.style.height = '100%';
-    contentCol.style.flexShrink = '0';
-  }
-
-  /*
-   * Keep the poster's internal layout fixed during export.
-   */
-  const photoWrap = exportPoster.querySelector('.poster__photo-wrap');
-  if (photoWrap) {
-    photoWrap.style.height = '100%';
-  }
-
-  /*
-   * Append the cloned poster to the temporary container.
-   */
-  exportHost.appendChild(exportPoster);
-  document.body.appendChild(exportHost);
-
-  /*
-   * Wait for all images in the cloned poster.
-   */
-  const images = Array.from(exportPoster.querySelectorAll('img'));
-
-  await Promise.all(
-    images.map((img) => {
-      if (img.complete && img.naturalWidth > 0) {
-        return Promise.resolve();
-      }
-
-      return new Promise((resolve, reject) => {
-        img.addEventListener('load', resolve, { once: true });
-        img.addEventListener(
-          'error',
-          () => reject(new Error(`Could not load image: ${img.src}`)),
-          { once: true }
-        );
-      });
-    })
-  );
-
-  /*
-   * Allow the browser to calculate the cloned layout
-   * before html2canvas captures it.
-   */
-  await new Promise((resolve) =>
-    requestAnimationFrame(() =>
-      requestAnimationFrame(resolve)
-    )
-  );
-
-  /*
-   * Render the fixed-size poster.
-   *
-   * 960 × 540 × 2.5
-   * = 2400 × 1350 pixels
-   */
-  const canvas = await html2canvas(exportPoster, {
-    width: EXPORT_WIDTH,
-    height: EXPORT_HEIGHT,
-
-    scale: RENDER_SCALE,
-
-    useCORS: true,
-    allowTaint: false,
-
-    backgroundColor: '#FFFFFF',
-
-    logging: false,
-
-    /*
-     * Explicitly tell html2canvas which dimensions
-     * to capture.
-     */
-    windowWidth: EXPORT_WIDTH,
-    windowHeight: EXPORT_HEIGHT
-  });
-
-  /*
-   * Remove temporary export copy.
-   */
-  exportHost.remove();
-
-  /*
-   * Convert to JPG.
-   */
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) {
-          reject(
-            new Error('Canvas could not be converted to a JPG.')
+  async function waitForImages(root) {
+    const images = Array.from(root.querySelectorAll('img'));
+    await Promise.all(
+      images.map((img) => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise((resolve, reject) => {
+          img.addEventListener('load', resolve, { once: true });
+          img.addEventListener(
+            'error',
+            () => reject(new Error(`Could not load image: ${img.src}`)),
+            { once: true }
           );
-          return;
-        }
-
-        resolve(blob);
-      },
-      'image/jpeg',
-      0.95
+        });
+      })
     );
-  });
-}
-
-  // Give the browser one frame to finish layout/painting
-  await new Promise((resolve) =>
-    requestAnimationFrame(() => requestAnimationFrame(resolve))
-  );
-
-  const canvas = await html2canvas(poster, {
-    scale: RENDER_SCALE,
-    useCORS: true,
-    allowTaint: false,
-    backgroundColor: '#FFFFFF',
-    logging: false
-  });
-
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) {
-          reject(new Error('Canvas could not be converted to a JPG.'));
-          return;
-        }
-
-        resolve(blob);
-      },
-      'image/jpeg',
-      0.95
-    );
-  });
-}
-  function downloadBlob(blob, filename) {
-  if (!blob) {
-    throw new Error('No file data was generated.');
   }
 
-  const url = URL.createObjectURL(blob);
+  function nextFrame() {
+    return new Promise((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(resolve))
+    );
+  }
 
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.style.display = 'none';
+  async function renderPosterBlob() {
+    // Make sure all images in the live poster are loaded.
+    await waitForImages(poster);
+    await nextFrame();
 
-  document.body.appendChild(link);
-  link.click();
+    // Clone the poster for export so we can force exact dimensions
+    // without disturbing the live preview layout.
+    const exportPoster = poster.cloneNode(true);
+    exportPoster.removeAttribute('id');
 
-  setTimeout(() => {
-    link.remove();
-    URL.revokeObjectURL(url);
-  }, 1000);
-}
+    // Force 960 × 540 export size.
+    exportPoster.style.width = `${EXPORT_WIDTH}px`;
+    exportPoster.style.height = `${EXPORT_HEIGHT}px`;
+    exportPoster.style.maxWidth = 'none';
+    exportPoster.style.minWidth = `${EXPORT_WIDTH}px`;
+    exportPoster.style.aspectRatio = 'auto';
+    exportPoster.style.margin = '0';
+    exportPoster.style.padding = '0';
+    exportPoster.style.position = 'static';
+
+    // Preserve 40/60 column proportions.
+    const photoCol = exportPoster.querySelector('.poster__photo-col');
+    const contentCol = exportPoster.querySelector('.poster__content-col');
+
+    if (photoCol) {
+      photoCol.style.width = '40%';
+      photoCol.style.height = '100%';
+      photoCol.style.flexShrink = '0';
+    }
+    if (contentCol) {
+      contentCol.style.width = '60%';
+      contentCol.style.height = '100%';
+      contentCol.style.flexShrink = '0';
+    }
+
+    const photoWrap = exportPoster.querySelector('.poster__photo-wrap');
+    if (photoWrap) {
+      photoWrap.style.height = '100%';
+    }
+
+    // Off-screen host for the clone.
+    const exportHost = document.createElement('div');
+    exportHost.style.cssText =
+      'position:fixed;left:-10000px;top:0;width:' +
+      EXPORT_WIDTH +
+      'px;height:' +
+      EXPORT_HEIGHT +
+      'px;overflow:hidden;pointer-events:none;z-index:-1;';
+    exportHost.appendChild(exportPoster);
+    document.body.appendChild(exportHost);
+
+    try {
+      // Wait for images in the clone too (they should already be cached).
+      await waitForImages(exportPoster);
+      await nextFrame();
+
+      const canvas = await html2canvas(exportPoster, {
+        width: EXPORT_WIDTH,
+        height: EXPORT_HEIGHT,
+        scale: RENDER_SCALE,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#FFFFFF',
+        logging: false,
+        windowWidth: EXPORT_WIDTH,
+        windowHeight: EXPORT_HEIGHT
+      });
+
+      return await new Promise((resolve, reject) => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error('Canvas could not be converted to a JPG.'));
+              return;
+            }
+            resolve(blob);
+          },
+          'image/jpeg',
+          0.95
+        );
+      });
+    } finally {
+      exportHost.remove();
+    }
+  }
+
+  function downloadBlob(blob, filename) {
+    if (!blob) throw new Error('No file data was generated.');
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
+
+    document.body.appendChild(link);
+    link.click();
+
+    setTimeout(() => {
+      link.remove();
+      URL.revokeObjectURL(url);
+    }, 1000);
+  }
 
   async function generateBatch(list) {
     if (!list.length) {
       generateStatus.textContent = 'No participants to generate.';
       return;
     }
+
     generateSelectedBtn.disabled = true;
     generateAllBtn.disabled = true;
 
     if (typeof JSZip === 'undefined') {
-  throw new Error('JSZip failed to load.');
-}
+      generateStatus.textContent = 'JSZip failed to load.';
+      generateSelectedBtn.disabled = false;
+      generateAllBtn.disabled = false;
+      return;
+    }
 
-const zip = new JSZip();
-    const savedTitle = state.title, savedCustom = state.customTitle, savedName = state.name;
+    const zip = new JSZip();
+    const savedTitle = state.title;
+    const savedCustom = state.customTitle;
+    const savedName = state.name;
 
     for (let i = 0; i < list.length; i++) {
       const p = list[i];
-      generateStatus.textContent = `Rendering ${i + 1} of ${list.length}: ${p.name}…`;
+      generateStatus.textContent = `Rendering ${i + 1} of ${list.length}: ${
+        p.name
+      }…`;
       state.title = p.title;
       state.customTitle = p.customTitle;
       state.name = p.name;
       updatePreview();
-      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      await nextFrame();
       try {
         const blob = await renderPosterBlob();
         const label = displayName(p.title, p.customTitle, p.name);
@@ -572,7 +505,9 @@ const zip = new JSZip();
       }
     }
 
-    state.title = savedTitle; state.customTitle = savedCustom; state.name = savedName;
+    state.title = savedTitle;
+    state.customTitle = savedCustom;
+    state.name = savedName;
     updatePreview();
 
     generateStatus.textContent = 'Packaging ZIP…';
@@ -587,8 +522,30 @@ const zip = new JSZip();
   generateSelectedBtn.addEventListener('click', () => {
     generateBatch(state.participants.filter((p) => p.selected));
   });
+
   generateAllBtn.addEventListener('click', () => {
     generateBatch(state.participants.slice());
+  });
+
+  /* ---------------------------------------------------------
+     DOWNLOAD CURRENT
+  --------------------------------------------------------- */
+  downloadCurrentBtn.addEventListener('click', async () => {
+    generateStatus.textContent = 'Rendering poster…';
+    downloadCurrentBtn.disabled = true;
+
+    try {
+      const blob = await renderPosterBlob();
+      const label = displayName(state.title, state.customTitle, state.name);
+      const filename = `japhter-medical-aid-${slugify(label)}.jpg`;
+      downloadBlob(blob, filename);
+      generateStatus.textContent = 'Downloaded successfully.';
+    } catch (err) {
+      console.error('JPG generation failed:', err);
+      generateStatus.textContent = `Download failed: ${err.message || err}`;
+    } finally {
+      downloadCurrentBtn.disabled = false;
+    }
   });
 
   /* ---------------------------------------------------------
@@ -597,32 +554,3 @@ const zip = new JSZip();
   updatePreview();
   renderParticipants();
 })();
-
-downloadCurrentBtn.addEventListener('click', async () => {
-  generateStatus.textContent = 'Rendering poster…';
-  downloadCurrentBtn.disabled = true;
-
-  try {
-    const blob = await renderPosterBlob();
-
-    const label = displayName(
-      state.title,
-      state.customTitle,
-      state.name
-    );
-
-    const filename =
-      `japhter-medical-aid-${slugify(label)}.jpg`;
-
-    downloadBlob(blob, filename);
-
-    generateStatus.textContent = 'Downloaded successfully.';
-  } catch (err) {
-    console.error('JPG generation failed:', err);
-
-    generateStatus.textContent =
-      `Download failed: ${err.message || err}`;
-  } finally {
-    downloadCurrentBtn.disabled = false;
-  }
-});
