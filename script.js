@@ -2,9 +2,9 @@
   'use strict';
 
   if (window.pdfjsLib) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  }
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
 
   /* ---------------------------------------------------------
      STATE
@@ -118,58 +118,6 @@
     updatePreview();
   });
 
-  /* ---------------------------------------------------------
-     JAPHTER PHOTO CONTROLS
-  --------------------------------------------------------- */
-  photoInput.addEventListener('change', async () => {
-    const file = photoInput.files[0];
-    if (!file) return;
-    state.photo.src = await fileToDataURL(file);
-    updatePreview();
-  });
-  photoRemoveBtn.addEventListener('click', () => {
-    state.photo.src = '';
-    photoInput.value = '';
-    updatePreview();
-  });
-  photoScale.addEventListener('input', () => {
-    state.photo.scale = Number(photoScale.value);
-    photoScaleOut.textContent = state.photo.scale + '%';
-    updatePreview();
-  });
-  photoX.addEventListener('input', () => {
-    state.photo.x = Number(photoX.value);
-    updatePreview();
-  });
-  photoY.addEventListener('input', () => {
-    state.photo.y = Number(photoY.value);
-    updatePreview();
-  });
-  photoOpacity.addEventListener('input', () => {
-    state.photo.opacity = Number(photoOpacity.value);
-    photoOpacityOut.textContent = state.photo.opacity + '%';
-    updatePreview();
-  });
-
-  /* ---------------------------------------------------------
-     M-PESA CONTROLS
-  --------------------------------------------------------- */
-  mpesaInput.addEventListener('change', async () => {
-    const file = mpesaInput.files[0];
-    if (!file) return;
-    state.mpesa.src = await fileToDataURL(file);
-    updatePreview();
-  });
-  mpesaRemoveBtn.addEventListener('click', () => {
-    state.mpesa.src = '';
-    mpesaInput.value = '';
-    updatePreview();
-  });
-  mpesaSize.addEventListener('input', () => {
-    state.mpesa.size = Number(mpesaSize.value);
-    mpesaSizeOut.textContent = state.mpesa.size + 'px';
-    updatePreview();
-  });
 
   /* ---------------------------------------------------------
      PARTICIPANT LIST — manual add
