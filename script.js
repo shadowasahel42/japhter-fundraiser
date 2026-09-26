@@ -306,22 +306,54 @@ const EXPORT_HEIGHT = 540;
 const RENDER_SCALE = 2.5;
 
 async function renderPosterBlob() {
+  const images = Array.from(poster.querySelectorAll('img'));
 
-  /*
-   * Create a temporary export container.
-   * This prevents the downloaded JPG from depending
-   * on the responsive width of the live preview.
-   */
-  const exportHost = document.createElement('div');
+  await Promise.all(
+    images.map((img) => {
+      if (img.complete && img.naturalWidth > 0) {
+        return Promise.resolve();
+      }
 
-  exportHost.style.position = 'fixed';
-  exportHost.style.left = '-10000px';
-  exportHost.style.top = '0';
-  exportHost.style.width = `${EXPORT_WIDTH}px`;
-  exportHost.style.height = `${EXPORT_HEIGHT}px`;
-  exportHost.style.overflow = 'hidden';
-  exportHost.style.pointerEvents = 'none';
-  exportHost.style.zIndex = '-1';
+      return new Promise((resolve, reject) => {
+        img.addEventListener('load', resolve, { once: true });
+        img.addEventListener(
+          'error',
+          () => reject(new Error(`Could not load image: ${img.src}`)),
+          { once: true }
+        );
+      });
+    })
+  );
+
+  await new Promise((resolve) =>
+    requestAnimationFrame(() =>
+      requestAnimationFrame(resolve)
+    )
+  );
+
+  const canvas = await html2canvas(poster, {
+    scale: RENDER_SCALE,
+    useCORS: true,
+    allowTaint: false,
+    backgroundColor: '#FFFFFF',
+    logging: false
+  });
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error('Canvas could not be converted to a JPG.'));
+          return;
+        }
+
+        resolve(blob);
+      },
+      'image/jpeg',
+      0.95
+    );
+  });
+}
 
   /*
    * Clone the actual poster.
@@ -565,35 +597,6 @@ const zip = new JSZip();
   updatePreview();
   renderParticipants();
 })();
-
-downloadCurrentBtn.addEventListener('click', async () => {
-  generateStatus.textContent = 'Rendering poster…';
-  downloadCurrentBtn.disabled = true;
-
-  try {
-    const blob = await renderPosterBlob();
-
-    const label = displayName(
-      state.title,
-      state.customTitle,
-      state.name
-    );
-
-    const filename =
-      `japhter-medical-aid-${slugify(label)}.jpg`;
-
-    downloadBlob(blob, filename);
-
-    generateStatus.textContent = 'Downloaded successfully.';
-  } catch (err) {
-    console.error('JPG generation failed:', err);
-
-    generateStatus.textContent =
-      `Download failed: ${err.message || err}`;
-  } finally {
-    downloadCurrentBtn.disabled = false;
-  }
-});
 
 downloadCurrentBtn.addEventListener('click', async () => {
   generateStatus.textContent = 'Rendering poster…';
