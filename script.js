@@ -594,3 +594,32 @@ downloadCurrentBtn.addEventListener('click', async () => {
     downloadCurrentBtn.disabled = false;
   }
 });
+
+downloadCurrentBtn.addEventListener('click', async () => {
+  generateStatus.textContent = 'Rendering poster…';
+  downloadCurrentBtn.disabled = true;
+
+  try {
+    const blob = await renderPosterBlob();
+
+    const label = displayName(
+      state.title,
+      state.customTitle,
+      state.name
+    );
+
+    const filename =
+      `japhter-medical-aid-${slugify(label)}.jpg`;
+
+    downloadBlob(blob, filename);
+
+    generateStatus.textContent = 'Downloaded successfully.';
+  } catch (err) {
+    console.error('JPG generation failed:', err);
+
+    generateStatus.textContent =
+      `Download failed: ${err.message || err}`;
+  } finally {
+    downloadCurrentBtn.disabled = false;
+  }
+});
