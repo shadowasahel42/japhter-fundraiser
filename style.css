@@ -188,6 +188,7 @@ input[type="range"]{ width:100%; accent-color:var(--blue); }
   display:flex;
   overflow:hidden;
   font-family:var(--font-body);
+  flex-shrink:0;
 }
 
 /* photo column */
@@ -406,6 +407,22 @@ input[type="range"]{ width:100%; accent-color:var(--blue); }
 @media (max-width: 560px){
   .manual-add{ grid-template-columns:1fr; }
   .app-header__title h1{ font-size:1.05rem; }
-  .poster__heading{ font-size:1.5rem; }
-  .poster__invite-name{ font-size:1.15rem; }
+
+  .preview-frame{
+    padding:.4rem;
+    overflow-x:auto;
+  }
+
+  .poster{
+    width:100%;
+    min-width:320px;
+  }
+
+  .poster__heading{
+    font-size:1.5rem;
+  }
+
+  .poster__invite-name{
+    font-size:1.15rem;
+  }
 }
