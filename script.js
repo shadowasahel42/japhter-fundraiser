@@ -300,25 +300,75 @@
   --------------------------------------------------------- */
   const RENDER_SCALE = 2.5; // ~2400x1350 for a 960x540 poster box
 
-  async function renderPosterBlob() {
-    const canvas = await html2canvas(poster, {
-      scale: RENDER_SCALE,
-      useCORS: true,
-      backgroundColor: '#FFFFFF'
-    });
-    return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+ async function renderPosterBlob() {
+  // Make sure all images inside the poster are fully loaded
+  const images = Array.from(poster.querySelectorAll('img'));
+
+  await Promise.all(
+    images.map((img) => {
+      if (img.complete && img.naturalWidth > 0) {
+        return Promise.resolve();
+      }
+
+      return new Promise((resolve, reject) => {
+        img.addEventListener('load', resolve, { once: true });
+        img.addEventListener(
+          'error',
+          () => reject(new Error(`Could not load image: ${img.src}`)),
+          { once: true }
+        );
+      });
+    })
+  );
+
+  // Give the browser one frame to finish layout/painting
+  await new Promise((resolve) =>
+    requestAnimationFrame(() => requestAnimationFrame(resolve))
+  );
+
+  const canvas = await html2canvas(poster, {
+    scale: RENDER_SCALE,
+    useCORS: true,
+    allowTaint: false,
+    backgroundColor: '#FFFFFF',
+    logging: false
+  });
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error('Canvas could not be converted to a JPG.'));
+          return;
+        }
+
+        resolve(blob);
+      },
+      'image/jpeg',
+      0.95
+    );
+  });
+}
+  function downloadBlob(blob, filename) {
+  if (!blob) {
+    throw new Error('No file data was generated.');
   }
 
-  function downloadBlob(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
-  }
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.style.display = 'none';
+
+  document.body.appendChild(link);
+  link.click();
+
+  setTimeout(() => {
+    link.remove();
+    URL.revokeObjectURL(url);
+  }, 1000);
+}
 
   downloadCurrentBtn.addEventListener('click', async () => {
     generateStatus.textContent = 'Rendering poster…';
@@ -344,7 +394,11 @@
     generateSelectedBtn.disabled = true;
     generateAllBtn.disabled = true;
 
-    const zip = new JSZip();
+    if (typeof JSZip === 'undefined') {
+  throw new Error('JSZip failed to load.');
+}
+
+const zip = new JSZip();
     const savedTitle = state.title, savedCustom = state.customTitle, savedName = state.name;
 
     for (let i = 0; i < list.length; i++) {
@@ -389,3 +443,32 @@
   updatePreview();
   renderParticipants();
 })();
+
+downloadCurrentBtn.addEventListener('click', async () => {
+  generateStatus.textContent = 'Rendering poster…';
+  downloadCurrentBtn.disabled = true;
+
+  try {
+    const blob = await renderPosterBlob();
+
+    const label = displayName(
+      state.title,
+      state.customTitle,
+      state.name
+    );
+
+    const filename =
+      `japhter-medical-aid-${slugify(label)}.jpg`;
+
+    downloadBlob(blob, filename);
+
+    generateStatus.textContent = 'Downloaded successfully.';
+  } catch (err) {
+    console.error('JPG generation failed:', err);
+
+    generateStatus.textContent =
+      `Download failed: ${err.message || err}`;
+  } finally {
+    downloadCurrentBtn.disabled = false;
+  }
+});
