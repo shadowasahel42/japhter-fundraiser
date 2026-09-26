@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Medical Aid Appeal — Poster Generator | Japhter Rono</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Great+Vibes&family=Dancing+Script:wght@500;700&family=Lato:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="app-header__title">
+    <span class="app-header__mark">✚</span>
+    <div>
+      <h1>Medical Aid Poster Generator</h1>
+      <p>Call for Medical Aid for Japhter Rono</p>
+    </div>
+  </div>
+</header>
+
+<main class="app-shell">
+
+  <!-- ============ CONTROLS ============ -->
+  <section class="panel controls" aria-label="Poster controls">
+
+    <div class="control-block">
+      <h2>1. Invitee</h2>
+      <label class="field">
+        <span>Title</span>
+        <select id="titleSelect">
+          <option value="">— No title —</option>
+          <option>Mr &amp; Mrs</option>
+          <option>Mr</option>
+          <option>Mrs</option>
+          <option>Miss</option>
+          <option>Ms</option>
+          <option>Rev</option>
+          <option>Dr</option>
+          <option>Pst</option>
+          <option>Prof</option>
+          <option>HoN</option>
+          <option>HE</option>
+          <option value="__custom">Custom title…</option>
+        </select>
+      </label>
+      <label class="field" id="customTitleField" hidden>
+        <span>Custom title</span>
+        <input type="text" id="customTitleInput" placeholder="e.g. Elder">
+      </label>
+      <label class="field">
+        <span>Invitee name</span>
+        <input type="text" id="nameInput" placeholder="e.g. John Kiptoo">
+      </label>
+    </div>
+
+    <div class="control-block">
+  <h2>2. Japhter's photo</h2>
+  <p class="hint">
+    Japhter's photo is fixed and included with the poster.
+  </p>
+</div>
+
+    <div class="control-block">
+  <h2>3. M-PESA icon</h2>
+  <p class="hint">
+    M-PESA icon is fixed at 120px.
+  </p>
+</div>
+
+    <div class="control-block">
+      <h2>4. Participant list</h2>
+
+      <div class="manual-add">
+        <select id="manualTitle">
+          <option value="">— Title —</option>
+          <option>Mr &amp; Mrs</option>
+          <option>Mr</option>
+          <option>Mrs</option>
+          <option>Miss</option>
+          <option>Ms</option>
+          <option>Rev</option>
+          <option>Dr</option>
+          <option>Pst</option>
+          <option>Prof</option>
+          <option>HoN</option>
+          <option>HE</option>
+        </select>
+        <input type="text" id="manualName" placeholder="Enter invitee name">
+        <button class="btn btn--primary" id="manualAddBtn" type="button">Add</button>
+      </div>
+
+      <label class="btn btn--secondary file-btn upload-list-btn">
+        Upload participant list (PDF / DOC / DOCX / XLS / XLSX)
+        <input type="file" id="listInput" accept=".pdf,.doc,.docx,.xls,.xlsx" multiple hidden>
+      </label>
+      <p class="hint" id="importStatus"></p>
+
+      <div class="participant-table-wrap">
+        <table class="participant-table" id="participantTable">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="selectAllBox" checked></th>
+              <th>Title</th>
+              <th>Name</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="participantBody"></tbody>
+        </table>
+        <p class="hint" id="emptyListHint">No participants yet. Add a name above or upload a list.</p>
+      </div>
+    </div>
+
+    <div class="control-block">
+      <h2>5. Generate</h2>
+      <div class="generate-grid">
+        <button class="btn btn--primary" id="downloadCurrentBtn" type="button">Download JPG (current)</button>
+        <button class="btn btn--secondary" id="generateSelectedBtn" type="button">Generate &amp; download selected</button>
+        <button class="btn btn--secondary" id="generateAllBtn" type="button">Generate &amp; download all</button>
+      </div>
+      <p class="hint" id="generateStatus"></p>
+    </div>
+
+  </section>
+
+  <!-- ============ PREVIEW ============ -->
+  <!-- ============ PREVIEW ============ -->
+<section class="panel preview-panel" aria-label="Poster preview">
+  <div class="preview-frame">
+
+    <div class="poster" id="poster">
+
+      <div class="poster__photo-col">
+        <div class="poster__photo-wrap">
+         <img 
+         id="posterPhoto"
+         class="poster__photo"
+         src="assets/japhter.png.jpg"
+         alt="Japhter Rono"
+>
+        </div>
+
+        <div class="poster__photo-caption">
+          <span class="poster__cross">✚</span>
+          <span>Japhter Rono</span>
+        </div>
+      </div>
+
+
+      <div class="poster__content-col">
+
+        <p class="poster__eyebrow">
+          Call for Medical Aid for
+        </p>
+
+        <h1 class="poster__heading">
+          Japhter.
+        </h1>
+
+        <p class="poster__appeal">
+          This is an urgent call to support a Medical Bill for Japhter Rono
+          (Wilson Kogo's)-Kapshongei, Cousin &amp; Dependent.
+        </p>
+
+        <p class="poster__body">
+          Japhter was unfortunately electrocuted and left with severe spinal injury.
+          He is currently admitted at RAPHA Hospital Eldoret.
+        </p>
+
+        <p class="poster__body">
+          We humbly appeal to friends, family and the community at large for help.
+        </p>
+
+        <div class="poster__invite">
+          <span class="poster__invite-label">Dear</span>
+          <span class="poster__invite-name" id="posterInviteeName">
+            Esteemed Guest
+          </span>
+        </div>
+
+
+        <div class="poster__payment">
+
+          <div class="poster__payment-text">
+            <p class="poster__payment-label">Treasurer</p>
+            <p class="poster__payment-name">Abel Bungei</p>
+            <p class="poster__payment-phone">0720864928</p>
+          </div>
+
+         <div class="poster__mpesa" id="posterMpesaWrap">
+  <img
+    id="posterMpesa"
+    src="assets/mpesa-logo.png"
+    alt="M-PESA"
+    width="120"
+    height="120"
+  >
+</div>
+
+        </div>
+
+
+        <p class="poster__closing">
+          Kongoi !! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Thank you !!
+        </p>
+
+
+        <!-- BANNER — KEEP IT INSIDE CONTENT COLUMN -->
+        <div class="poster__banner">
+
+          <span class="poster__banner-date">
+            Wednesday,<br>
+            30th September<br>
+            2026
+          </span>
+
+          <span class="poster__banner-divider"></span>
+
+          <span class="poster__banner-venue">
+            Kogo's<br>
+            Residence<br>
+            (Kiboswa)
+          </span>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <p class="hint preview-hint">
+    Live preview — the downloaded JPG is rendered at high resolution from this layout.
+  </p>
+
+</section>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth.js/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
