@@ -296,13 +296,88 @@
   }
 
   /* ---------------------------------------------------------
-     GENERATION (html2canvas → JPG)
-  --------------------------------------------------------- */
-  const RENDER_SCALE = 2.5; // ~2400x1350 for a 960x540 poster box
+   GENERATION (html2canvas → JPG)
+   Export is always rendered at a fixed 960 × 540 size,
+   regardless of the phone/PC screen size.
+--------------------------------------------------------- */
 
- async function renderPosterBlob() {
-  // Make sure all images inside the poster are fully loaded
-  const images = Array.from(poster.querySelectorAll('img'));
+const EXPORT_WIDTH = 960;
+const EXPORT_HEIGHT = 540;
+const RENDER_SCALE = 2.5;
+
+async function renderPosterBlob() {
+
+  /*
+   * Create a temporary export container.
+   * This prevents the downloaded JPG from depending
+   * on the responsive width of the live preview.
+   */
+  const exportHost = document.createElement('div');
+
+  exportHost.style.position = 'fixed';
+  exportHost.style.left = '-10000px';
+  exportHost.style.top = '0';
+  exportHost.style.width = `${EXPORT_WIDTH}px`;
+  exportHost.style.height = `${EXPORT_HEIGHT}px`;
+  exportHost.style.overflow = 'hidden';
+  exportHost.style.pointerEvents = 'none';
+  exportHost.style.zIndex = '-1';
+
+  /*
+   * Clone the actual poster.
+   */
+  const exportPoster = poster.cloneNode(true);
+
+  exportPoster.removeAttribute('id');
+
+  /*
+   * Force the export poster to exactly 960 × 540.
+   */
+  exportPoster.style.width = `${EXPORT_WIDTH}px`;
+  exportPoster.style.height = `${EXPORT_HEIGHT}px`;
+  exportPoster.style.maxWidth = 'none';
+  exportPoster.style.minWidth = `${EXPORT_WIDTH}px`;
+  exportPoster.style.aspectRatio = 'auto';
+  exportPoster.style.margin = '0';
+  exportPoster.style.padding = '0';
+
+  /*
+   * Make sure the two main columns retain their intended
+   * 40/60 proportions during export.
+   */
+  const photoCol = exportPoster.querySelector('.poster__photo-col');
+  const contentCol = exportPoster.querySelector('.poster__content-col');
+
+  if (photoCol) {
+    photoCol.style.width = '40%';
+    photoCol.style.height = '100%';
+    photoCol.style.flexShrink = '0';
+  }
+
+  if (contentCol) {
+    contentCol.style.width = '60%';
+    contentCol.style.height = '100%';
+    contentCol.style.flexShrink = '0';
+  }
+
+  /*
+   * Keep the poster's internal layout fixed during export.
+   */
+  const photoWrap = exportPoster.querySelector('.poster__photo-wrap');
+  if (photoWrap) {
+    photoWrap.style.height = '100%';
+  }
+
+  /*
+   * Append the cloned poster to the temporary container.
+   */
+  exportHost.appendChild(exportPoster);
+  document.body.appendChild(exportHost);
+
+  /*
+   * Wait for all images in the cloned poster.
+   */
+  const images = Array.from(exportPoster.querySelectorAll('img'));
 
   await Promise.all(
     images.map((img) => {
@@ -320,6 +395,69 @@
       });
     })
   );
+
+  /*
+   * Allow the browser to calculate the cloned layout
+   * before html2canvas captures it.
+   */
+  await new Promise((resolve) =>
+    requestAnimationFrame(() =>
+      requestAnimationFrame(resolve)
+    )
+  );
+
+  /*
+   * Render the fixed-size poster.
+   *
+   * 960 × 540 × 2.5
+   * = 2400 × 1350 pixels
+   */
+  const canvas = await html2canvas(exportPoster, {
+    width: EXPORT_WIDTH,
+    height: EXPORT_HEIGHT,
+
+    scale: RENDER_SCALE,
+
+    useCORS: true,
+    allowTaint: false,
+
+    backgroundColor: '#FFFFFF',
+
+    logging: false,
+
+    /*
+     * Explicitly tell html2canvas which dimensions
+     * to capture.
+     */
+    windowWidth: EXPORT_WIDTH,
+    windowHeight: EXPORT_HEIGHT
+  });
+
+  /*
+   * Remove temporary export copy.
+   */
+  exportHost.remove();
+
+  /*
+   * Convert to JPG.
+   */
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(
+            new Error('Canvas could not be converted to a JPG.')
+          );
+          return;
+        }
+
+        resolve(blob);
+      },
+      'image/jpeg',
+      0.95
+    );
+  });
+}
 
   // Give the browser one frame to finish layout/painting
   await new Promise((resolve) =>
@@ -369,22 +507,6 @@
     URL.revokeObjectURL(url);
   }, 1000);
 }
-
-  downloadCurrentBtn.addEventListener('click', async () => {
-    generateStatus.textContent = 'Rendering poster…';
-    downloadCurrentBtn.disabled = true;
-    try {
-      const blob = await renderPosterBlob();
-      const label = displayName(state.title, state.customTitle, state.name);
-      downloadBlob(blob, `japhter-medical-aid-${slugify(label)}.jpg`);
-      generateStatus.textContent = 'Downloaded.';
-    } catch (err) {
-      console.error(err);
-      generateStatus.textContent = 'Could not render the poster. See console for details.';
-    } finally {
-      downloadCurrentBtn.disabled = false;
-    }
-  });
 
   async function generateBatch(list) {
     if (!list.length) {
