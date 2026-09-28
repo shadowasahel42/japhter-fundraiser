@@ -6,22 +6,11 @@
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   }
 
-  /* ---------------------------------------------------------
-     STATE
-  --------------------------------------------------------- */
-  const state = {
-    title: '',
-    customTitle: '',
-    name: '',
-    photo: { scale: 100, x: 50, y: 50 },
-    mpesa: { size: 120 },
-    participants: [] // { id, title, customTitle, name, selected }
-  };
+  /* ---------------- STATE ---------------- */
+  const state = { title: '', customTitle: '', name: '', participants: [] };
   let nextId = 1;
 
-  /* ---------------------------------------------------------
-     DOM REFS
-  --------------------------------------------------------- */
+  /* ---------------- DOM ---------------- */
   const $ = (id) => document.getElementById(id);
 
   const titleSelect = $('titleSelect');
@@ -44,24 +33,15 @@
   const generateStatus = $('generateStatus');
 
   const poster = $('poster');
-  const posterPhoto = $('posterPhoto');
-  const posterPhotoPlaceholder = $('posterPhotoPlaceholder');
+  const posterScaler = $('posterScaler');
+  const previewFrame = $('previewFrame');
   const posterInviteeName = $('posterInviteeName');
-  const posterMpesaWrap = $('posterMpesaWrap');
-  const posterMpesa = $('posterMpesa');
+  const zoomBtn = $('zoomBtn');
 
-  /* ---------------------------------------------------------
-     HELPERS
-  --------------------------------------------------------- */
-  function fileToDataURL(file) {
-    return new Promise((resolve, reject) => {
-      const r = new FileReader();
-      r.onload = () => resolve(r.result);
-      r.onerror = () => reject(r.error);
-      r.readAsDataURL(file);
-    });
-  }
+  const POSTER_W = 960;
+  const POSTER_H = 540;
 
+  /* ---------------- HELPERS ---------------- */
   function displayName(title, custom, name) {
     const t = title === '__custom' ? (custom || '').trim() : (title || '').trim();
     const n = (name || '').trim();
@@ -78,71 +58,79 @@
     );
   }
 
-  /* ---------------------------------------------------------
-     LIVE PREVIEW UPDATE
-  --------------------------------------------------------- */
-  function updatePreview() {
-    const label = displayName(state.title, state.customTitle, state.name);
-    posterInviteeName.textContent = label;
-
-    // Japhter's fixed image
-    if (posterPhoto) {
-      posterPhoto.style.opacity = '1';
-      posterPhoto.style.objectPosition = `${state.photo.x}% ${state.photo.y}%`;
-      posterPhoto.style.transform = `scale(${state.photo.scale / 100})`;
-    }
-
-    // Fixed M-PESA icon
-    if (posterMpesa) {
-      posterMpesa.style.width = '120px';
-      posterMpesa.style.height = '120px';
+  /* ---------------- FIT + SCALE ----------------
+     The poster is always 960 × 540. If a long name or wrapped text would
+     overflow, every font size shrinks together (via --fit) until it fits. */
+  function fitPoster(el) {
+    const col = el.querySelector('.poster__content-col');
+    let f = 1;
+    el.style.setProperty('--fit', '1');
+    while (col.scrollHeight > col.clientHeight + 1 && f > 0.6) {
+      f = Math.round((f - 0.03) * 100) / 100;
+      el.style.setProperty('--fit', String(f));
     }
   }
 
-  /* ---------------------------------------------------------
-     INVITEE CONTROLS
-  --------------------------------------------------------- */
+  let zoomed = false;
+  function layoutPreview() {
+    const cs = getComputedStyle(previewFrame);
+    const avail =
+      previewFrame.clientWidth -
+      parseFloat(cs.paddingLeft) -
+      parseFloat(cs.paddingRight);
+    const s = zoomed ? 0.75 : Math.min(1, avail / POSTER_W);
+    posterScaler.style.width = zoomed ? `${POSTER_W * s}px` : '100%';
+    posterScaler.style.height = `${POSTER_H * s}px`;
+    poster.style.transform = `scale(${s})`;
+    zoomBtn.textContent = zoomed ? 'Fit to screen' : 'Zoom preview';
+  }
+
+  zoomBtn.addEventListener('click', () => {
+    zoomed = !zoomed;
+    layoutPreview();
+  });
+
+  if (window.ResizeObserver) new ResizeObserver(layoutPreview).observe(previewFrame);
+  window.addEventListener('resize', layoutPreview);
+
+  /* ---------------- LIVE PREVIEW ---------------- */
+  function updatePreview() {
+    posterInviteeName.textContent = displayName(state.title, state.customTitle, state.name);
+    fitPoster(poster);
+  }
+
   titleSelect.addEventListener('change', () => {
     state.title = titleSelect.value;
     customTitleField.hidden = titleSelect.value !== '__custom';
     updatePreview();
   });
-
   customTitleInput.addEventListener('input', () => {
     state.customTitle = customTitleInput.value;
     updatePreview();
   });
-
   nameInput.addEventListener('input', () => {
     state.name = nameInput.value;
     updatePreview();
   });
 
-  /* ---------------------------------------------------------
-     PARTICIPANT LIST — manual add
-  --------------------------------------------------------- */
+  /* ---------------- PARTICIPANTS ---------------- */
+  const TITLE_OPTIONS = ['', 'Mr & Mrs', 'Mr', 'Mrs', 'Miss', 'Ms', 'Rev', 'Dr', 'Pst', 'Prof', 'HoN', 'HE'];
+
   manualAddBtn.addEventListener('click', () => {
     const name = manualName.value.trim();
-    if (!name) {
-      manualName.focus();
-      return;
-    }
+    if (!name) { manualName.focus(); return; }
     addParticipant({ title: manualTitle.value, customTitle: '', name });
     manualName.value = '';
     manualName.focus();
   });
-
   manualName.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') manualAddBtn.click();
   });
 
   function addParticipant({ title, customTitle, name }) {
     state.participants.push({
-      id: nextId++,
-      title: title || '',
-      customTitle: customTitle || '',
-      name: name || '',
-      selected: true
+      id: nextId++, title: title || '', customTitle: customTitle || '',
+      name: name || '', selected: true
     });
     renderParticipants();
   }
@@ -151,21 +139,6 @@
     participantBody.innerHTML = '';
     emptyListHint.style.display = state.participants.length ? 'none' : 'block';
 
-    const titleOptions = [
-      '',
-      'Mr & Mrs',
-      'Mr',
-      'Mrs',
-      'Miss',
-      'Ms',
-      'Rev',
-      'Dr',
-      'Pst',
-      'Prof',
-      'HoN',
-      'HE'
-    ];
-
     state.participants.forEach((p) => {
       const tr = document.createElement('tr');
 
@@ -173,35 +146,31 @@
       const cb = document.createElement('input');
       cb.type = 'checkbox';
       cb.checked = p.selected;
-      cb.addEventListener('change', () => {
-        p.selected = cb.checked;
-      });
+      cb.setAttribute('aria-label', 'Include ' + p.name);
+      cb.addEventListener('change', () => { p.selected = cb.checked; });
       tdSel.appendChild(cb);
 
       const tdTitle = document.createElement('td');
       const sel = document.createElement('select');
-      titleOptions.forEach((t) => {
+      TITLE_OPTIONS.forEach((t) => {
         const opt = document.createElement('option');
         opt.value = t;
         opt.textContent = t || '—';
         if (t === p.title) opt.selected = true;
         sel.appendChild(opt);
       });
-      sel.addEventListener('change', () => {
-        p.title = sel.value;
-      });
+      sel.addEventListener('change', () => { p.title = sel.value; });
       tdTitle.appendChild(sel);
 
       const tdName = document.createElement('td');
       const nameField = document.createElement('input');
       nameField.type = 'text';
       nameField.value = p.name;
-      nameField.addEventListener('input', () => {
-        p.name = nameField.value;
-      });
+      nameField.addEventListener('input', () => { p.name = nameField.value; });
       tdName.appendChild(nameField);
 
       const tdActions = document.createElement('td');
+      tdActions.style.whiteSpace = 'nowrap';
       const previewBtn = document.createElement('button');
       previewBtn.type = 'button';
       previewBtn.className = 'row-preview';
@@ -211,35 +180,30 @@
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
       removeBtn.className = 'row-remove';
-      removeBtn.innerHTML = '✕';
+      removeBtn.textContent = '✕';
       removeBtn.title = 'Remove';
+      removeBtn.setAttribute('aria-label', 'Remove ' + p.name);
       removeBtn.addEventListener('click', () => {
         state.participants = state.participants.filter((x) => x.id !== p.id);
         renderParticipants();
       });
 
-      tdActions.appendChild(previewBtn);
-      tdActions.appendChild(removeBtn);
-
-      tr.appendChild(tdSel);
-      tr.appendChild(tdTitle);
-      tr.appendChild(tdName);
-      tr.appendChild(tdActions);
+      tdActions.append(previewBtn, removeBtn);
+      tr.append(tdSel, tdTitle, tdName, tdActions);
       participantBody.appendChild(tr);
     });
   }
 
   function applyParticipantToPreview(p) {
-    state.title = p.title === '__custom' ? '__custom' : p.title;
+    state.title = p.title;
     state.customTitle = p.customTitle || '';
     state.name = p.name;
-    titleSelect.value = titleOptionExists(p.title) ? p.title : '';
+    titleSelect.value = Array.from(titleSelect.options).some((o) => o.value === p.title) ? p.title : '';
+    customTitleField.hidden = true;
     nameInput.value = p.name;
     updatePreview();
-  }
-
-  function titleOptionExists(t) {
-    return Array.from(titleSelect.options).some((o) => o.value === t);
+    // On phones the preview sits at the top — bring it into view.
+    previewFrame.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   selectAllBox.addEventListener('change', () => {
@@ -247,42 +211,35 @@
     renderParticipants();
   });
 
-  /* ---------------------------------------------------------
-     PARTICIPANT LIST — file import
-  --------------------------------------------------------- */
+  /* ---------------- FILE IMPORT ---------------- */
   listInput.addEventListener('change', async () => {
     const files = Array.from(listInput.files || []);
     if (!files.length) return;
     importStatus.textContent = 'Reading file(s)…';
     let totalAdded = 0;
+    const errors = [];
 
     for (const file of files) {
       try {
         const names = await extractNamesFromFile(file);
-        names.forEach((n) =>
-          addParticipant({ title: '', customTitle: '', name: n })
-        );
+        names.forEach((n) => addParticipant({ title: '', customTitle: '', name: n }));
         totalAdded += names.length;
       } catch (err) {
         console.error(err);
-        importStatus.textContent = `Could not read "${file.name}": ${
-          err.message || err
-        }`;
+        errors.push(`"${file.name}": ${err.message || err}`);
       }
     }
-    importStatus.textContent = `Imported ${totalAdded} name(s) from ${files.length} file(s). Review and assign titles below.`;
+    importStatus.textContent =
+      `Imported ${totalAdded} name(s) from ${files.length} file(s). Review and assign titles below.` +
+      (errors.length ? ' Could not read ' + errors.join('; ') : '');
     listInput.value = '';
   });
 
   async function extractNamesFromFile(file) {
     const ext = file.name.split('.').pop().toLowerCase();
-
     if (ext === 'pdf') return extractFromPDF(file);
     if (ext === 'docx') return extractFromDocx(file);
-    if (ext === 'doc')
-      throw new Error(
-        'legacy .doc is not supported in-browser — please save as .docx'
-      );
+    if (ext === 'doc') throw new Error('legacy .doc is not supported in the browser — please save it as .docx');
     if (ext === 'xls' || ext === 'xlsx') return extractFromSheet(file);
     throw new Error('unsupported file type');
   }
@@ -294,8 +251,7 @@
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      const text = content.items.map((it) => it.str).join('\n');
-      text.split('\n').forEach((l) => lines.push(l));
+      content.items.forEach((it) => lines.push(it.str));
     }
     return cleanLines(lines);
   }
@@ -313,15 +269,13 @@
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
     const values = [];
     rows.forEach((row) => {
-      if (row && row[0] !== undefined && row[0] !== null)
-        values.push(String(row[0]));
+      if (row && row[0] !== undefined && row[0] !== null) values.push(String(row[0]));
     });
     return cleanLines(values);
   }
 
   function cleanLines(lines) {
-    const skipWords =
-      /^(name|names|participant|participants|invitee|invitees|title|no\.?|#)$/i;
+    const skipWords = /^(name|names|participant|participants|invitee|invitees|title|no\.?|#)$/i;
     return lines
       .map((l) => l.replace(/\s+/g, ' ').trim())
       .filter((l) => l.length > 1 && l.length < 60)
@@ -329,13 +283,8 @@
       .filter((l) => /[a-zA-Z]/.test(l));
   }
 
-  /* ---------------------------------------------------------
-     GENERATION (html2canvas → JPG)
-     Export is always rendered at a fixed 960 × 540 size,
-     regardless of the phone/PC screen size.
-  --------------------------------------------------------- */
-  const EXPORT_WIDTH = 960;
-  const EXPORT_HEIGHT = 540;
+  /* ---------------- EXPORT (html2canvas → JPG) ----------------
+     Always rendered from a fixed 960 × 540 layout at 2.5× (2400 × 1350 px). */
   const RENDER_SCALE = 2.5;
 
   async function waitForImages(root) {
@@ -345,200 +294,135 @@
         if (img.complete && img.naturalWidth > 0) return Promise.resolve();
         return new Promise((resolve, reject) => {
           img.addEventListener('load', resolve, { once: true });
-          img.addEventListener(
-            'error',
-            () => reject(new Error(`Could not load image: ${img.src}`)),
-            { once: true }
-          );
+          img.addEventListener('error', () => reject(new Error(`Could not load image: ${img.getAttribute('src')}`)), { once: true });
         });
       })
     );
   }
 
   function nextFrame() {
-    return new Promise((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(resolve))
-    );
+    return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   }
 
   async function renderPosterBlob() {
-    // Make sure all images in the live poster are loaded.
+    if (typeof html2canvas === 'undefined') throw new Error('html2canvas failed to load. Check your internet connection.');
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
     await waitForImages(poster);
+    fitPoster(poster);
     await nextFrame();
 
-    // Clone the poster for export so we can force exact dimensions
-    // without disturbing the live preview layout.
+    // Clone without the preview scaling so export is always exactly 960 × 540.
     const exportPoster = poster.cloneNode(true);
     exportPoster.removeAttribute('id');
+    exportPoster.style.transform = 'none';
+    exportPoster.style.position = 'relative';
+    exportPoster.style.left = '0';
+    exportPoster.style.top = '0';
 
-    // Force 960 × 540 export size.
-    exportPoster.style.width = `${EXPORT_WIDTH}px`;
-    exportPoster.style.height = `${EXPORT_HEIGHT}px`;
-    exportPoster.style.maxWidth = 'none';
-    exportPoster.style.minWidth = `${EXPORT_WIDTH}px`;
-    exportPoster.style.aspectRatio = 'auto';
-    exportPoster.style.margin = '0';
-    exportPoster.style.padding = '0';
-    exportPoster.style.position = 'static';
-
-    // Preserve 40/60 column proportions.
-    const photoCol = exportPoster.querySelector('.poster__photo-col');
-    const contentCol = exportPoster.querySelector('.poster__content-col');
-
-    if (photoCol) {
-      photoCol.style.width = '40%';
-      photoCol.style.height = '100%';
-      photoCol.style.flexShrink = '0';
-    }
-    if (contentCol) {
-      contentCol.style.width = '60%';
-      contentCol.style.height = '100%';
-      contentCol.style.flexShrink = '0';
-    }
-
-    const photoWrap = exportPoster.querySelector('.poster__photo-wrap');
-    if (photoWrap) {
-      photoWrap.style.height = '100%';
-    }
-
-    // Off-screen host for the clone.
-    const exportHost = document.createElement('div');
-    exportHost.style.cssText =
-      'position:fixed;left:-10000px;top:0;width:' +
-      EXPORT_WIDTH +
-      'px;height:' +
-      EXPORT_HEIGHT +
-      'px;overflow:hidden;pointer-events:none;z-index:-1;';
-    exportHost.appendChild(exportPoster);
-    document.body.appendChild(exportHost);
+    const host = document.createElement('div');
+    host.style.cssText =
+      `position:fixed;left:-10000px;top:0;width:${POSTER_W}px;height:${POSTER_H}px;overflow:hidden;pointer-events:none;z-index:-1;`;
+    host.appendChild(exportPoster);
+    document.body.appendChild(host);
 
     try {
-      // Wait for images in the clone too (they should already be cached).
       await waitForImages(exportPoster);
       await nextFrame();
 
       const canvas = await html2canvas(exportPoster, {
-        width: EXPORT_WIDTH,
-        height: EXPORT_HEIGHT,
+        width: POSTER_W,
+        height: POSTER_H,
         scale: RENDER_SCALE,
         useCORS: true,
         allowTaint: false,
         backgroundColor: '#FFFFFF',
         logging: false,
-        windowWidth: EXPORT_WIDTH,
-        windowHeight: EXPORT_HEIGHT
+        windowWidth: POSTER_W,
+        windowHeight: POSTER_H
       });
 
       return await new Promise((resolve, reject) => {
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              reject(new Error('Canvas could not be converted to a JPG.'));
-              return;
-            }
-            resolve(blob);
-          },
-          'image/jpeg',
-          0.95
-        );
+        canvas.toBlob((blob) => {
+          if (!blob) reject(new Error('Canvas could not be converted to a JPG.'));
+          else resolve(blob);
+        }, 'image/jpeg', 0.95);
       });
     } finally {
-      exportHost.remove();
+      host.remove();
     }
   }
 
   function downloadBlob(blob, filename) {
-    if (!blob) throw new Error('No file data was generated.');
-
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;
     link.style.display = 'none';
-
     document.body.appendChild(link);
     link.click();
-
-    setTimeout(() => {
-      link.remove();
-      URL.revokeObjectURL(url);
-    }, 1000);
+    setTimeout(() => { link.remove(); URL.revokeObjectURL(url); }, 1000);
   }
 
   async function generateBatch(list) {
-    if (!list.length) {
-      generateStatus.textContent = 'No participants to generate.';
-      return;
-    }
+    if (!list.length) { generateStatus.textContent = 'No participants to generate.'; return; }
+    if (typeof JSZip === 'undefined') { generateStatus.textContent = 'JSZip failed to load. Check your internet connection.'; return; }
 
     generateSelectedBtn.disabled = true;
     generateAllBtn.disabled = true;
 
-    if (typeof JSZip === 'undefined') {
-      generateStatus.textContent = 'JSZip failed to load.';
+    const zip = new JSZip();
+    const used = {};
+    const saved = { title: state.title, customTitle: state.customTitle, name: state.name };
+    let done = 0;
+
+    try {
+      for (let i = 0; i < list.length; i++) {
+        const p = list[i];
+        generateStatus.textContent = `Rendering ${i + 1} of ${list.length}: ${p.name}…`;
+        state.title = p.title;
+        state.customTitle = p.customTitle;
+        state.name = p.name;
+        updatePreview();
+        await nextFrame();
+        try {
+          const blob = await renderPosterBlob();
+          let base = `japhter-medical-aid-${slugify(displayName(p.title, p.customTitle, p.name))}`;
+          used[base] = (used[base] || 0) + 1;
+          if (used[base] > 1) base += `-${used[base]}`;
+          zip.file(`${base}.jpg`, blob);
+          done++;
+        } catch (err) {
+          console.error('Failed for', p.name, err);
+        }
+      }
+
+      if (!done) throw new Error('No posters could be rendered.');
+      generateStatus.textContent = 'Packaging ZIP…';
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      downloadBlob(zipBlob, 'japhter-medical-aid-posters.zip');
+      generateStatus.textContent = `Done — ${done} poster(s) downloaded as a ZIP.`;
+    } catch (err) {
+      generateStatus.textContent = `Generation failed: ${err.message || err}`;
+    } finally {
+      state.title = saved.title;
+      state.customTitle = saved.customTitle;
+      state.name = saved.name;
+      updatePreview();
       generateSelectedBtn.disabled = false;
       generateAllBtn.disabled = false;
-      return;
     }
-
-    const zip = new JSZip();
-    const savedTitle = state.title;
-    const savedCustom = state.customTitle;
-    const savedName = state.name;
-
-    for (let i = 0; i < list.length; i++) {
-      const p = list[i];
-      generateStatus.textContent = `Rendering ${i + 1} of ${list.length}: ${
-        p.name
-      }…`;
-      state.title = p.title;
-      state.customTitle = p.customTitle;
-      state.name = p.name;
-      updatePreview();
-      await nextFrame();
-      try {
-        const blob = await renderPosterBlob();
-        const label = displayName(p.title, p.customTitle, p.name);
-        zip.file(`japhter-medical-aid-${slugify(label)}.jpg`, blob);
-      } catch (err) {
-        console.error('Failed for', p.name, err);
-      }
-    }
-
-    state.title = savedTitle;
-    state.customTitle = savedCustom;
-    state.name = savedName;
-    updatePreview();
-
-    generateStatus.textContent = 'Packaging ZIP…';
-    const zipBlob = await zip.generateAsync({ type: 'blob' });
-    downloadBlob(zipBlob, 'japhter-medical-aid-posters.zip');
-    generateStatus.textContent = `Done — ${list.length} poster(s) downloaded as a ZIP.`;
-
-    generateSelectedBtn.disabled = false;
-    generateAllBtn.disabled = false;
   }
 
-  generateSelectedBtn.addEventListener('click', () => {
-    generateBatch(state.participants.filter((p) => p.selected));
-  });
+  generateSelectedBtn.addEventListener('click', () => generateBatch(state.participants.filter((p) => p.selected)));
+  generateAllBtn.addEventListener('click', () => generateBatch(state.participants.slice()));
 
-  generateAllBtn.addEventListener('click', () => {
-    generateBatch(state.participants.slice());
-  });
-
-  /* ---------------------------------------------------------
-     DOWNLOAD CURRENT
-  --------------------------------------------------------- */
   downloadCurrentBtn.addEventListener('click', async () => {
     generateStatus.textContent = 'Rendering poster…';
     downloadCurrentBtn.disabled = true;
-
     try {
       const blob = await renderPosterBlob();
       const label = displayName(state.title, state.customTitle, state.name);
-      const filename = `japhter-medical-aid-${slugify(label)}.jpg`;
-      downloadBlob(blob, filename);
+      downloadBlob(blob, `japhter-medical-aid-${slugify(label)}.jpg`);
       generateStatus.textContent = 'Downloaded successfully.';
     } catch (err) {
       console.error('JPG generation failed:', err);
@@ -548,9 +432,12 @@
     }
   });
 
-  /* ---------------------------------------------------------
-     INIT
-  --------------------------------------------------------- */
+  /* ---------------- INIT ---------------- */
+  layoutPreview();
   updatePreview();
   renderParticipants();
+  // Re-fit once web fonts have loaded (they change text widths).
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => { updatePreview(); layoutPreview(); });
+  }
 })();
