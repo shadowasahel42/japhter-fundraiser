@@ -59,18 +59,14 @@
     </div>
 
     <div class="control-block">
-  <h2>2. Japhter's photo</h2>
-  <p class="hint">
-    Japhter's photo is fixed and included with the poster.
-  </p>
-</div>
+      <h2>2. Japhter's photo</h2>
+      <p class="hint">Japhter's photo is fixed and included with the poster.</p>
+    </div>
 
     <div class="control-block">
-  <h2>3. M-PESA icon</h2>
-  <p class="hint">
-    M-PESA icon is fixed at 120px.
-  </p>
-</div>
+      <h2>3. M-PESA icon</h2>
+      <p class="hint">The M-PESA icon is fixed. To resize it, change <code>--mpesa-size</code> in style.css.</p>
+    </div>
 
     <div class="control-block">
       <h2>4. Participant list</h2>
@@ -95,7 +91,7 @@
       </div>
 
       <label class="btn btn--secondary file-btn upload-list-btn">
-        Upload participant list (PDF / DOC / DOCX / XLS / XLSX)
+        Upload participant list (PDF / DOCX / XLS / XLSX)
         <input type="file" id="listInput" accept=".pdf,.doc,.docx,.xls,.xlsx" multiple hidden>
       </label>
       <p class="hint" id="importStatus"></p>
@@ -104,7 +100,7 @@
         <table class="participant-table" id="participantTable">
           <thead>
             <tr>
-              <th><input type="checkbox" id="selectAllBox" checked></th>
+              <th><input type="checkbox" id="selectAllBox" checked aria-label="Select all"></th>
               <th>Title</th>
               <th>Name</th>
               <th></th>
@@ -129,124 +125,74 @@
   </section>
 
   <!-- ============ PREVIEW ============ -->
-  <!-- ============ PREVIEW ============ -->
-<section class="panel preview-panel" aria-label="Poster preview">
-  <div class="preview-frame">
+  <section class="panel preview-panel" aria-label="Poster preview">
+    <div class="preview-frame" id="previewFrame">
+      <div class="poster-scaler" id="posterScaler">
 
-    <div class="poster" id="poster">
+        <div class="poster" id="poster">
 
-      <div class="poster__photo-col">
-        <div class="poster__photo-wrap">
-         <img 
-         id="posterPhoto"
-         class="poster__photo"
-         src="japhter.png.jpg"
-         alt="Japhter Rono"
->
-        </div>
-
-        <div class="poster__photo-caption">
-          <span class="poster__cross">✚</span>
-          <span>Japhter Rono</span>
-        </div>
-      </div>
-
-
-      <div class="poster__content-col">
-
-        <p class="poster__eyebrow">
-          Call for Medical Aid for
-        </p>
-
-        <h1 class="poster__heading">
-          Japhter.
-        </h1>
-
-        <p class="poster__appeal">
-          This is an urgent call to support a Medical Bill for Japhter Rono
-          (Wilson Kogo's)-Kapshongei, Cousin &amp; Dependent.
-        </p>
-
-        <p class="poster__body">
-          Japhter was unfortunately electrocuted and left with severe spinal injury.
-          He is currently admitted at RAPHA Hospital Eldoret.
-        </p>
-
-        <p class="poster__body">
-          We humbly appeal to friends, family and the community at large for help.
-        </p>
-
-        <div class="poster__invite">
-          <span class="poster__invite-label">Dear</span>
-          <span class="poster__invite-name" id="posterInviteeName">
-            Esteemed Guest
-          </span>
-        </div>
-
-
-        <div class="poster__payment">
-
-          <div class="poster__payment-text">
-            <p class="poster__payment-label">Treasurer</p>
-            <p class="poster__payment-name">Abel Bungei</p>
-            <p class="poster__payment-phone">0720864928</p>
+          <div class="poster__photo-col">
+            <div class="poster__photo-wrap">
+              <img id="posterPhoto" class="poster__photo" src="japhter.png.jpg" alt="Japhter Rono">
+            </div>
+            <div class="poster__photo-caption">
+              <span class="poster__cross">✚</span>
+              <span>Japhter Rono</span>
+            </div>
           </div>
 
-         <div class="poster__mpesa" id="posterMpesaWrap">
-  <img
-    id="posterMpesa"
-    src="mpesa-logo.png"
-    alt="M-PESA"
-    width="120"
-    height="120"
-  >
-</div>
+          <div class="poster__content-col">
 
-        </div>
+            <div class="poster__group">
+              <h2 class="poster__heading">CALL FOR MEDICAL AID</h2>
+              <p class="poster__appeal">An urgent appeal to support Japhter Rono, cousin and dependent of Wilson Kogo of Kapshong’ei, Kiboswa Village.</p>
+              <p class="poster__body">Japhter suffered severe spinal injuries in an electrical accident. He underwent two surgeries at Rapha Hospital, Eldoret, and was discharged, but part of his medical bill remains unpaid.</p>
+              <p class="poster__body">We humbly appeal to family, friends and the community to stand with Japhter and his family during this difficult journey.</p>
+            </div>
 
+            <div class="poster__group poster__group--invite">
+              <div class="poster__invite">
+                <span class="poster__invite-label">Dear</span>
+                <span class="poster__invite-name" id="posterInviteeName">Esteemed Guest</span><span class="poster__invite-comma">,</span>
+              </div>
+              <p class="poster__body">We warmly invite you to join us in supporting Japhter through your presence, prayers and generous contribution towards his medical expenses.</p>
+            </div>
 
-        <p class="poster__closing">
-          Kongoi !! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Thank you !!
-        </p>
+            <div class="poster__group">
+              <div class="poster__info">
+                <div class="poster__when">
+                  <p class="poster__date">Wednesday, 30th September 2026 <span class="poster__sep">|</span> 3:00 PM</p>
+                  <p class="poster__venue">Kogo's Residence, Kiboswa</p>
+                </div>
+                <div class="poster__payment">
+                  <div class="poster__payment-text">
+                    <p class="poster__treasurer">Treasurer: Abel Bungei</p>
+                    <p class="poster__mpesa-line"><span>M-PESA:</span> <strong>0720 864 928</strong></p>
+                  </div>
+                  <div class="poster__mpesa" id="posterMpesaWrap">
+                    <img id="posterMpesa" src="mpesa-logo.png" alt="M-PESA">
+                  </div>
+                </div>
+              </div>
+              <p class="poster__closing">Kongoi!! Thank you!!</p>
+            </div>
 
-
-        <!-- BANNER — KEEP IT INSIDE CONTENT COLUMN -->
-        <div class="poster__banner">
-
-          <span class="poster__banner-date">
-            Wednesday,<br>
-            30th September 2026<br>
-            3pm.
-          </span>
-
-          <span class="poster__banner-divider"></span>
-
-          <span class="poster__banner-venue">
-            Kogo's<br>
-            Residence<br>
-            (Kiboswa)
-          </span>
-
+          </div>
         </div>
 
       </div>
-
     </div>
 
-  </div>
-
-  <p class="hint preview-hint">
-    Live preview — the downloaded JPG is rendered at high resolution from this layout.
-  </p>
-
-</section>
+    <button class="btn btn--ghost preview-zoom" id="zoomBtn" type="button">Zoom preview</button>
+    <p class="hint preview-hint">Live preview — the downloaded JPG is rendered at high resolution from this exact layout.</p>
+  </section>
 
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth.js/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="script.js"></script>
 </body>
